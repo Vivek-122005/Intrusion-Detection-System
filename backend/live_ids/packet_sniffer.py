@@ -48,6 +48,9 @@ BENIGN_WHITELIST = {
 # Only run ML on "interesting" ports that might be attack targets
 SUSPECT_PORTS = {21, 22, 23, 80, 8080, 443}  # FTP, SSH, Telnet, HTTP, HTTP-alt, HTTPS
 
+# Target IP address to monitor (set to None to monitor all traffic)
+TARGET_IP = " 10.7.19.211"  # Your machine's IP address
+
 def is_whitelisted(flow_key):
     """
     Check if a flow should be whitelisted as Benign based on port/IP patterns.
@@ -89,6 +92,7 @@ def should_process_flow(flow_key, flow):
     - Ultra-short flows (duration < 0.01s)
     - Private LAN traffic (10.x.x.x to 10.x.x.x)
     - Whitelisted benign protocols
+    - Flows not involving target IP (if TARGET_IP is set)
     
     Returns:
         tuple: (should_process: bool, reason: str)
@@ -97,6 +101,11 @@ def should_process_flow(flow_key, flow):
         return False, "Invalid flow key"
     
     src_ip, dst_ip, src_port, dst_port, protocol = flow_key
+    
+    # Filter: Only process flows involving target IP (if TARGET_IP is set)
+    if TARGET_IP:
+        if TARGET_IP not in [src_ip, dst_ip]:
+            return False, f"Not involving target IP {TARGET_IP}"
     
     # 1. Check whitelist first (skip ML for known benign protocols)
     if is_whitelisted(flow_key):
@@ -204,8 +213,32 @@ def process_packet(pkt):
                     print(f"⚠️  Rejected: Bruteforce with duration {duration:.3f}s (need >1s) - Flow {f_key[:2]}")
                     continue
             
+            # Fix #5: Realistic flow validation for Infiltration
+            # CICIDS Infiltration flows were: TCP only, 50+ packets, duration >2s, sustained connections
+            if label == "Infiltration":
+                # Infiltration must be TCP (protocol 6)
+                if protocol != 6:
+                    print(f"⚠️  Rejected: Infiltration on non-TCP flow (protocol {protocol}) - Flow {f_key[:2]}")
+                    continue
+                
+                # Infiltration must have at least 50 packets (CICIDS minimum)
+                if packet_count < 50:
+                    print(f"⚠️  Rejected: Infiltration with only {packet_count} packets (need 50+) - Flow {f_key[:2]}")
+                    continue
+                
+                # Infiltration must have duration > 2s (sustained attack)
+                if duration < 2.0:
+                    print(f"⚠️  Rejected: Infiltration with duration {duration:.3f}s (need >2s) - Flow {f_key[:2]}")
+                    continue
+            
+            # Fix #6: Low confidence override - treat low confidence predictions as Benign
+            # If confidence is too low (< 0.7), the model is uncertain - treat as Benign
+            if label != "Benign" and confidence < 0.7:
+                print(f"⚠️  Low confidence ({confidence:.4f}) - treating {label} as Benign - Flow {f_key[:2]}")
+                label = "Benign"  # Override to Benign for low confidence
+            
             # Only alert if:
-            # 1. Not Benign AND
+            # 1. Not Benign (after all validations) AND
             # 2. Confidence meets class-specific threshold
             #    - Infiltration/Bruteforce: 0.99 (very high - these are often false positives)
             #    - Other classes: 0.9 (high confidence)
@@ -216,8 +249,14 @@ def process_packet(pkt):
                     min_conf = 0.9
                 
                 if confidence >= min_conf:
-                    log_alert(f_key, label, confidence)
+                    # Extract features dict for logging
+                    features_dict = df.iloc[0].to_dict()
+                    log_alert(f_key, label, confidence, features_dict)
                     print(f"🚨 ALERT: {label} detected on flow {f_key} (Confidence: {confidence:.4f})")
+            else:
+                # Optional: print benign flows for debugging (can be removed in production)
+                # print(f"✅ BENIGN: Flow {f_key[:2]} (Confidence: {confidence:.4f})")
+                pass
             # else:
                 # Optional: print benign flows for debugging (can be removed)
                 # print(f"✅ BENIGN: {label} detected on flow {f_key} (Confidence: {confidence:.4f})")
@@ -227,21 +266,36 @@ def process_packet(pkt):
             traceback.print_exc()
 
 
-def start_sniffer(interface=None):
+def start_sniffer(interface=None, target_ip=None):
     """
     Start the packet sniffer.
     
     Args:
         interface: Network interface name (e.g., 'en0' for macOS, 'eth0' for Linux)
                    If None, uses default interface
+        target_ip: IP address to monitor (if None, uses TARGET_IP constant or monitors all)
     """
+    global TARGET_IP
+    if target_ip:
+        TARGET_IP = target_ip
+    
     # Load model first
     if not load_model():
         print("ERROR: Failed to load ML model. Cannot start sniffer.")
         return
     
-    print("Starting live IDS...")
+    print("=" * 70)
+    print("🖥️  Live IDS - Network Traffic Monitoring")
+    print("=" * 70)
+    if TARGET_IP:
+        print(f"📡 Monitoring traffic for IP: {TARGET_IP}")
+        print(f"   (Only flows involving {TARGET_IP} will be analyzed)")
+    else:
+        print("📡 Monitoring ALL traffic on interface")
+    print(f"🌐 Interface: {interface or 'default'}")
+    print("=" * 70)
     print("Press Ctrl+C to stop")
+    print()
     
     try:
         if interface:
@@ -260,6 +314,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Live IDS Packet Sniffer')
     parser.add_argument('--iface', type=str, help='Network interface name (e.g., en0, eth0)')
+    parser.add_argument('--target-ip', type=str, help='IP address to monitor (default: 10.7.19.211)')
     parser.add_argument('interface', nargs='?', help='Network interface name (positional argument)')
     
     args = parser.parse_args()
@@ -267,5 +322,8 @@ if __name__ == "__main__":
     # Use --iface flag first, then positional argument, then None
     interface = args.iface or args.interface
     
-    start_sniffer(interface)
+    # Use --target-ip if provided, otherwise use default from TARGET_IP constant
+    target_ip = args.target_ip if args.target_ip else TARGET_IP
+    
+    start_sniffer(interface, target_ip)
 

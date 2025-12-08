@@ -1,19 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import AnimatedDashboard from './AnimatedDashboard';
+import MinimalLiveDashboard from './MinimalLiveDashboard';
 import './LiveAlerts.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5050';
 
-function LiveAlerts() {
-  const [useAnimated, setUseAnimated] = useState(true);
+function LiveAlerts({ onNavigate }) {
+  const [viewMode, setViewMode] = useState('minimal'); // 'minimal', 'animated', 'list'
 
-  // Use animated dashboard by default
-  if (useAnimated) {
+  if (viewMode === 'minimal') {
+    return <MinimalLiveDashboard onNavigate={onNavigate} />;
+  }
+
+  if (viewMode === 'animated') {
     return (
       <div>
-        <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+        <div style={{ textAlign: 'right', marginBottom: '10px', padding: '10px' }}>
           <button
-            onClick={() => setUseAnimated(false)}
+            onClick={() => setViewMode('minimal')}
+            style={{
+              padding: '8px 16px',
+              background: '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginRight: '10px'
+            }}
+          >
+            Minimal View
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
             style={{
               padding: '8px 16px',
               background: '#666',
@@ -23,7 +41,7 @@ function LiveAlerts() {
               cursor: 'pointer'
             }}
           >
-            Switch to List View
+            List View
           </button>
         </div>
         <AnimatedDashboard />
@@ -34,19 +52,34 @@ function LiveAlerts() {
   // Original list view
   return (
     <div>
-      <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+      <div style={{ textAlign: 'right', marginBottom: '10px', padding: '10px' }}>
         <button
-          onClick={() => setUseAnimated(true)}
+          onClick={() => setViewMode('minimal')}
           style={{
             padding: '8px 16px',
             background: '#2196F3',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            marginRight: '10px'
           }}
         >
-          Switch to Animated Dashboard
+          Minimal View
+        </button>
+        <button
+          onClick={() => setViewMode('animated')}
+          style={{
+            padding: '8px 16px',
+            background: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginRight: '10px'
+          }}
+        >
+          Animated Dashboard
         </button>
       </div>
       <LiveAlertsList />

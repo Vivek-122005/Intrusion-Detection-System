@@ -3,6 +3,7 @@
 import json
 import time
 from pathlib import Path
+import numpy as np
 
 # Get absolute path to logs directory
 _logger_file = Path(__file__).resolve()
@@ -11,7 +12,7 @@ LOG_FILE = BACKEND_DIR / "logs" / "ids_alerts.log"
 LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
-def log_alert(flow_key, label, confidence=None):
+def log_alert(flow_key, label, confidence=None, features=None):
     """
     Log an alert to the JSON lines log file.
     
@@ -19,6 +20,7 @@ def log_alert(flow_key, label, confidence=None):
         flow_key: Tuple representing the flow (src_ip, dst_ip, src_port, dst_port, protocol)
         label: Predicted label (e.g., "DDoS", "Benign", etc.)
         confidence: Optional confidence score
+        features: Optional dict of feature values
     """
     entry = {
         "timestamp": time.time(),
@@ -27,7 +29,22 @@ def log_alert(flow_key, label, confidence=None):
     }
     
     if confidence is not None:
-        entry["confidence"] = confidence
+        entry["confidence"] = round(confidence, 4)
+    
+    if features is not None:
+        # Convert numpy types to native Python types for JSON serialization
+        features_clean = {}
+        for k, v in features.items():
+            if hasattr(v, 'item'):  # numpy scalar
+                features_clean[k] = v.item()
+            elif isinstance(v, (np.integer, np.floating)):
+                features_clean[k] = float(v) if isinstance(v, np.floating) else int(v)
+            elif isinstance(v, (int, float, str, bool)) or v is None:
+                features_clean[k] = v
+            else:
+                # Fallback: convert to string
+                features_clean[k] = str(v)
+        entry["features"] = features_clean
     
     with open(LOG_FILE, "a") as f:
         f.write(json.dumps(entry) + "\n")

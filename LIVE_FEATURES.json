@@ -1,17 +1,4 @@
 {
-  "model_name": "ids_7class_histgb_safe",
-  "model_type": "HistGradientBoostingClassifier",
-  "num_classes": 7,
-  "classes": [
-    "Benign",
-    "Bot",
-    "Bruteforce",
-    "DDoS",
-    "DoS",
-    "Infiltration",
-    "Web Attack"
-  ],
-  "num_features": 30,
   "feature_names": [
     "Protocol",
     "Flow Duration",
@@ -44,8 +31,6 @@
     "Subflow Fwd Bytes",
     "Fwd Act Data Packets"
   ],
-  "macro_f1": 0.9029750552677502,
-  "train_samples": 121600,
-  "test_samples": 30400,
-  "note": "Trained on live-extractable features only (30 features)"
+  "num_features": 30,
+  "description": "Features that can be extracted from live unidirectional flows"
 }

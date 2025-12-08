@@ -51,18 +51,28 @@ BASE_DIR = _app_file.parent.parent  # Project root (absolute)
 MODEL_DIR = BASE_DIR / "backend" / "models"  # backend/models directory (absolute)
 
 # Try to find the model file
+# Prioritize the new 7-class model: ids_7class_histgb_safe.joblib
 model_path = None
 le_path = None
 
 logger.info(f"Looking for models in: {MODEL_DIR}")
 
+# First, try to find the new model explicitly
+new_model_name = "ids_7class_histgb_safe.joblib"
+new_model_path = MODEL_DIR / new_model_name
+if new_model_path.exists():
+    model_path = new_model_path
+    logger.info(f"Found new model: {new_model_name}")
+
+# Look for label encoder
 if MODEL_DIR.exists():
     model_files = list(MODEL_DIR.glob("*.joblib"))
     logger.info(f"Found {len(model_files)} .joblib files: {[f.name for f in model_files]}")
     for f in model_files:
         if "label_encoder" in f.name:
             le_path = f
-        elif "ids_" in f.name or "model" in f.name.lower():
+        elif model_path is None and ("ids_" in f.name or "model" in f.name.lower()):
+            # Only set model_path if we haven't found the new model yet
             model_path = f
 
 # Fallback to artifacts directory in project root
@@ -70,10 +80,16 @@ if not model_path or not le_path:
     artifacts_dir = BASE_DIR / "artifacts"
     logger.warning(f"Models not in backend/models, checking: {artifacts_dir}")
     if artifacts_dir.exists():
+        # Try new model first in artifacts
+        new_model_path_artifacts = artifacts_dir / new_model_name
+        if new_model_path_artifacts.exists() and model_path is None:
+            model_path = new_model_path_artifacts
+            logger.info(f"Found new model in artifacts: {new_model_name}")
+        
         for f in artifacts_dir.glob("*.joblib"):
             if "label_encoder" in f.name:
                 le_path = f
-            elif "ids_" in f.name:
+            elif model_path is None and "ids_" in f.name:
                 model_path = f
         if model_path or le_path:
             logger.info("Found models in artifacts directory")
@@ -461,6 +477,27 @@ def get_metadata():
             })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/latest-alerts', methods=['GET', 'OPTIONS'])
+def get_latest_alerts():
+    """Return the latest IDS alerts from the log file"""
+    try:
+        from live_ids.logger import read_latest_alerts
+        
+        # Get number of alerts from query parameter (default 50)
+        n = request.args.get('n', 50, type=int)
+        alerts = read_latest_alerts(n)
+        
+        return jsonify({
+            'success': True,
+            'alerts': alerts,
+            'count': len(alerts)
+        })
+    except Exception as e:
+        logger.exception(f"Error reading alerts: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050, host='localhost')

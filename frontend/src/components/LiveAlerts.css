@@ -1,0 +1,138 @@
+.live-alerts-container {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.live-alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.live-alerts-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.poll-button {
+  padding: 10px 20px;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.poll-button:hover {
+  background: #1976D2;
+}
+
+.poll-button.active {
+  background: #F44336;
+}
+
+.poll-button.active:hover {
+  background: #D32F2F;
+}
+
+.alerts-stats {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #666;
+}
+
+.alerts-list {
+  max-height: 500px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.no-alerts {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-style: italic;
+}
+
+.alert-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  border-left: 4px solid #757575;
+  border-radius: 4px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.alert-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.alert-label {
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.alert-time {
+  font-size: 12px;
+  color: #666;
+}
+
+.alert-flow {
+  font-family: monospace;
+  font-size: 13px;
+  color: #333;
+  margin-top: 5px;
+  word-break: break-all;
+}
+
+.alert-confidence {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* Scrollbar styling */
+.alerts-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.alerts-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.alerts-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.alerts-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+

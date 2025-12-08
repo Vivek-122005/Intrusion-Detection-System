@@ -5,6 +5,8 @@ import ResultsDisplay from './components/ResultsDisplay';
 import Header from './components/Header';
 import StatusIndicator from './components/StatusIndicator';
 import LiveAlerts from './components/LiveAlerts';
+import MinimalLiveDashboard from './components/MinimalLiveDashboard';
+import { setNavigateToTab } from './components/MinimalLiveDashboard';
 import './styles/App.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5050';
@@ -20,6 +22,8 @@ function App() {
   useEffect(() => {
     checkApiHealth();
     fetchFeatureNames();
+    // Set up navigation function for MinimalLiveDashboard
+    setNavigateToTab(setActiveTab);
   }, []);
 
   const fetchFeatureNames = async () => {
@@ -45,30 +49,38 @@ function App() {
       console.log('Metadata endpoint not available, trying fallback', err);
     }
     
-    // Fallback: Use hardcoded feature list from model metadata
-    // This matches the 77 features in model_metadata.json
+    // Fallback: Use the 30 live-extractable features from model_metadata.json
     const fallbackFeatures = [
-      "Protocol", "Flow Duration", "Total Fwd Packets", "Total Backward Packets",
-      "Fwd Packets Length Total", "Bwd Packets Length Total", "Fwd Packet Length Max",
-      "Fwd Packet Length Min", "Fwd Packet Length Mean", "Fwd Packet Length Std",
-      "Bwd Packet Length Max", "Bwd Packet Length Min", "Bwd Packet Length Mean",
-      "Bwd Packet Length Std", "Flow Bytes/s", "Flow Packets/s", "Flow IAT Mean",
-      "Flow IAT Std", "Flow IAT Max", "Flow IAT Min", "Fwd IAT Total", "Fwd IAT Mean",
-      "Fwd IAT Std", "Fwd IAT Max", "Fwd IAT Min", "Bwd IAT Total", "Bwd IAT Mean",
-      "Bwd IAT Std", "Bwd IAT Max", "Bwd IAT Min", "Fwd PSH Flags", "Bwd PSH Flags",
-      "Fwd URG Flags", "Bwd URG Flags", "Fwd Header Length", "Bwd Header Length",
-      "Fwd Packets/s", "Bwd Packets/s", "Packet Length Min", "Packet Length Max",
-      "Packet Length Mean", "Packet Length Std", "Packet Length Variance",
-      "FIN Flag Count", "SYN Flag Count", "RST Flag Count", "PSH Flag Count",
-      "ACK Flag Count", "URG Flag Count", "CWE Flag Count", "ECE Flag Count",
-      "Down/Up Ratio", "Avg Packet Size", "Avg Fwd Segment Size",
-      "Avg Bwd Segment Size", "Fwd Avg Bytes/Bulk", "Fwd Avg Packets/Bulk",
-      "Fwd Avg Bulk Rate", "Bwd Avg Bytes/Bulk", "Bwd Avg Packets/Bulk",
-      "Bwd Avg Bulk Rate", "Subflow Fwd Packets", "Subflow Fwd Bytes",
-      "Subflow Bwd Packets", "Subflow Bwd Bytes", "Init Fwd Win Bytes",
-      "Init Bwd Win Bytes", "Fwd Act Data Packets", "Fwd Seg Size Min",
-      "Active Mean", "Active Std", "Active Max", "Active Min",
-      "Idle Mean", "Idle Std", "Idle Max", "Idle Min"
+      "Protocol",
+      "Flow Duration",
+      "Total Fwd Packets",
+      "Fwd Packets Length Total",
+      "Fwd Packet Length Max",
+      "Fwd Packet Length Min",
+      "Fwd Packet Length Mean",
+      "Fwd Packet Length Std",
+      "Flow Bytes/s",
+      "Flow Packets/s",
+      "Flow IAT Mean",
+      "Flow IAT Std",
+      "Flow IAT Max",
+      "Flow IAT Min",
+      "Fwd IAT Total",
+      "Fwd IAT Mean",
+      "Fwd IAT Std",
+      "Fwd IAT Max",
+      "Fwd IAT Min",
+      "Fwd Packets/s",
+      "Packet Length Min",
+      "Packet Length Max",
+      "Packet Length Mean",
+      "Packet Length Std",
+      "Packet Length Variance",
+      "Avg Packet Size",
+      "Avg Fwd Segment Size",
+      "Subflow Fwd Packets",
+      "Subflow Fwd Bytes",
+      "Fwd Act Data Packets"
     ];
     setFeatureNames(fallbackFeatures);
   };
@@ -257,7 +269,7 @@ function App() {
 
             {activeTab === 'live' && (
               <div className="live-section">
-                <LiveAlerts />
+                <LiveAlerts onNavigate={setActiveTab} />
               </div>
             )}
           </div>

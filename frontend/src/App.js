@@ -4,6 +4,7 @@ import ManualInput from './components/ManualInput';
 import ResultsDisplay from './components/ResultsDisplay';
 import Header from './components/Header';
 import StatusIndicator from './components/StatusIndicator';
+import LiveAlerts from './components/LiveAlerts';
 import './styles/App.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5050';
@@ -13,7 +14,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [apiStatus, setApiStatus] = useState({ status: 'checking', modelLoaded: false });
-  const [activeTab, setActiveTab] = useState('file'); // 'file' or 'manual'
+  const [activeTab, setActiveTab] = useState('file'); // 'file', 'manual', or 'live'
   const [featureNames, setFeatureNames] = useState([]);
 
   useEffect(() => {
@@ -219,6 +220,16 @@ function App() {
             >
               📝 Manual Input
             </button>
+            <button
+              className={`tab-button ${activeTab === 'live' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('live');
+                setPredictionResults(null);
+                setError(null);
+              }}
+            >
+              🔴 Live Alerts
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -241,6 +252,12 @@ function App() {
                   disabled={!apiStatus.modelLoaded}
                   featureNames={featureNames}
                 />
+              </div>
+            )}
+
+            {activeTab === 'live' && (
+              <div className="live-section">
+                <LiveAlerts />
               </div>
             )}
           </div>
